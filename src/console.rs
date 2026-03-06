@@ -266,6 +266,13 @@ pub struct ConsoleConfiguration {
     /// Custom completion sequences,
     /// for example [vec!["custom", "foo"]], will complete `custom foo` when typing `custom`
     pub arg_completions: Vec<Vec<String>>,
+    /// Height of the input field itself (in pixels)
+    /// Affects how tall the text input box appears
+    /// Default: 30.0
+    pub input_field_height: f32,
+    /// Font size for input text (in pixels)
+    /// Default: 14.0
+    pub input_font_size: f32,
 }
 
 #[derive(Resource, Default)]
@@ -300,6 +307,8 @@ impl Default for ConsoleConfiguration {
             block_mouse: false,
             block_keyboard: false,
             arg_completions: Default::default(),
+            input_field_height: 30.0,
+            input_font_size: 14.0,
         }
     }
 }
@@ -315,7 +324,6 @@ impl Clone for ConsoleConfiguration {
             commands: self.commands.clone(),
             history_size: self.history_size,
             symbol: self.symbol.clone(),
-            arg_completions: self.arg_completions.clone(),
             collapsible: false,
             title_name: "Console".to_string(),
             resizable: true,
@@ -326,6 +334,9 @@ impl Clone for ConsoleConfiguration {
             num_suggestions: 4,
             block_mouse: self.block_mouse,
             block_keyboard: self.block_keyboard,
+            arg_completions: self.arg_completions.clone(),
+            input_field_height: self.input_field_height,
+            input_font_size: self.input_font_size,
         }
     }
 }
@@ -410,7 +421,7 @@ impl Default for ConsoleState {
 }
 
 fn default_style(config: &ConsoleConfiguration) -> TextFormat {
-    TextFormat::simple(FontId::monospace(14f32), config.foreground_color)
+    TextFormat::simple(FontId::monospace(config.input_font_size), config.foreground_color)
 }
 
 fn style_ansi_text(str: &str, config: &ConsoleConfiguration) -> LayoutJob {
@@ -553,7 +564,7 @@ pub(crate) fn console_ui(
             // Bottom panel: input area
             // ------------------------
             egui::TopBottomPanel::bottom("console_input_panel")
-                .exact_height(36.0)
+                .min_height(config.input_field_height.max(config.input_font_size * 1.8 + 15.0))
                 .show_inside(ui, |ui| {
                     ui.separator();
 
@@ -568,6 +579,13 @@ pub(crate) fn console_ui(
                         state.scrollback.clear();
                         return;
                     }
+
+                    let mut input_style = (**ui.style()).clone();
+                    input_style.text_styles.insert(
+                        egui::TextStyle::Monospace,
+                        egui::FontId::new(config.input_font_size, egui::FontFamily::Monospace),
+                    );
+                    ui.set_style(input_style);
 
                     let text_edit = egui::TextEdit::singleline(&mut state.buf)
                         .desired_width(f32::INFINITY)
@@ -644,7 +662,7 @@ pub(crate) fn console_ui(
 
                                 let mut layout_job = egui::text::LayoutJob::default();
                                 let mut style = egui::TextFormat {
-                                    font_id: egui::FontId::new(14.0, egui::FontFamily::Monospace),
+                                    font_id: egui::FontId::new(config.input_font_size, egui::FontFamily::Monospace),
                                     color: egui::Color32::WHITE,
                                     ..Default::default()
                                 };
