@@ -564,7 +564,15 @@ pub(crate) fn console_ui(
             // Bottom panel: input area
             // ------------------------
             egui::TopBottomPanel::bottom("console_input_panel")
-                .min_height(config.input_field_height.max(config.input_font_size * 1.8 + 15.0))
+                .frame(egui::Frame {
+                    inner_margin: egui::Margin {
+                        left: 10,
+                        right: 10,
+                        top: 5,
+                        bottom: 10,
+                    },
+                    ..Default::default()
+                })
                 .show_inside(ui, |ui| {
                     ui.separator();
 
@@ -590,7 +598,9 @@ pub(crate) fn console_ui(
                     let text_edit = egui::TextEdit::singleline(&mut state.buf)
                         .desired_width(f32::INFINITY)
                         .lock_focus(true)
-                        .font(egui::TextStyle::Monospace);
+                        .font(egui::TextStyle::Monospace)
+                        .frame(true)
+                        .margin(egui::vec2(12.0, 12.0));
 
                     let text_edit_response = ui.add(text_edit);
 
