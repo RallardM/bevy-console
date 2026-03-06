@@ -10,7 +10,7 @@ license = "MIT"
 readme = "README.md"
 
 [dependencies]
-bevy = { version = "0.18", default-features = false, features = [
+bevy = { path = "../bevy/", default-features = false, features = [
   "std",
   "bevy_log",
   "keyboard",
