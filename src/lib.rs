@@ -16,7 +16,7 @@ use crate::commands::{
 
 pub use crate::console::{
     AddConsoleCommand, Command, ConsoleCommand, ConsoleCommandEntered, ConsoleConfiguration,
-    ConsoleOpen, NamedCommand, PrintConsoleLine,
+    ConsoleOpen, ConsoleSizeValue, NamedCommand, PrintConsoleLine,
 };
 pub use crate::log::*;
 

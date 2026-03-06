@@ -224,6 +224,65 @@ impl PrintConsoleLine {
     }
 }
 
+/// Size value for console dimensions.
+///
+/// Supports absolute pixels (`Px`) and percentages (`Percent`) of the current viewport.
+#[derive(Clone, Copy, Debug)]
+pub enum ConsoleSizeValue {
+    /// Absolute size in logical pixels.
+    Px(f32),
+    /// Relative size in percentage of the viewport (0-100).
+    Percent(f32),
+}
+
+impl ConsoleSizeValue {
+    /// Resolves the value into logical pixels for the provided viewport size.
+    pub fn resolve(self, viewport_size: f32) -> f32 {
+        match self {
+            Self::Px(px) => px.max(0.0),
+            Self::Percent(percent) => (viewport_size * (percent.max(0.0) / 100.0)).max(0.0),
+        }
+    }
+}
+
+impl From<f32> for ConsoleSizeValue {
+    fn from(value: f32) -> Self {
+        Self::Px(value)
+    }
+}
+
+impl From<&str> for ConsoleSizeValue {
+    fn from(value: &str) -> Self {
+        let trimmed = value.trim();
+        if let Some(number) = trimmed.strip_suffix('%') {
+            if let Ok(parsed) = number.trim().parse::<f32>() {
+                return Self::Percent(parsed);
+            }
+            return Self::Px(0.0);
+        }
+
+        let lower = trimmed.to_ascii_lowercase();
+        if let Some(number) = lower.strip_suffix("px") {
+            if let Ok(parsed) = number.trim().parse::<f32>() {
+                return Self::Px(parsed);
+            }
+            return Self::Px(0.0);
+        }
+
+        if let Ok(parsed) = trimmed.parse::<f32>() {
+            return Self::Px(parsed);
+        }
+
+        Self::Px(0.0)
+    }
+}
+
+impl From<String> for ConsoleSizeValue {
+    fn from(value: String) -> Self {
+        Self::from(value.as_str())
+    }
+}
+
 /// Console configuration
 #[derive(Resource)]
 pub struct ConsoleConfiguration {
@@ -233,10 +292,10 @@ pub struct ConsoleConfiguration {
     pub left_pos: f32,
     /// Top position
     pub top_pos: f32,
-    /// Console height
-    pub height: f32,
-    /// Console width
-    pub width: f32,
+    /// Console height (`"400px"`, `400.0`, or `"50%"`)
+    pub height: ConsoleSizeValue,
+    /// Console width (`"800px"`, `800.0`, or `"100%"`)
+    pub width: ConsoleSizeValue,
     /// Registered console commands
     pub commands: BTreeMap<&'static str, clap::Command>,
     /// Number of commands to store in history
@@ -291,8 +350,8 @@ impl Default for ConsoleConfiguration {
             keys: vec![KeyCode::Backquote],
             left_pos: 200.0,
             top_pos: 100.0,
-            height: 400.0,
-            width: 800.0,
+            height: ConsoleSizeValue::Px(400.0),
+            width: ConsoleSizeValue::Px(800.0),
             commands: BTreeMap::new(),
             history_size: 20,
             symbol: "$ ".to_owned(),
@@ -545,10 +604,14 @@ pub(crate) fn console_ui(
     // Recompute predictions if the buffer changed
     recompute_predictions(&mut state, &mut cache, config.num_suggestions);
 
+    let viewport = ctx.content_rect();
+    let resolved_width = config.width.resolve(viewport.width());
+    let resolved_height = config.height.resolve(viewport.height());
+
     egui::Window::new(&config.title_name)
         .collapsible(config.collapsible)
         .default_pos([config.left_pos, config.top_pos])
-        .default_size([config.width, config.height])
+        .fixed_size([resolved_width, resolved_height])
         .resizable(config.resizable)
         .movable(config.moveable)
         .title_bar(config.show_title_bar)
@@ -665,7 +728,7 @@ pub(crate) fn console_ui(
                             .movable(false);
 
                         suggestions_area.show(ui.ctx(), |ui| {
-                            ui.set_min_width(config.width);
+                            ui.set_min_width(resolved_width);
 
                             for (i, suggestion) in cache.predictions_cache.iter().enumerate() {
                                 let is_highlighted = Some(i) == state.suggestion_index;
