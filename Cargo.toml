@@ -28,7 +28,7 @@ strip-ansi-escapes = "0.2"
 trie-rs = "0.4"
 
 [dev-dependencies]
-bevy = { version = "0.18", features = ["std", "bevy_log", "keyboard", "mouse"] }
+bevy = { path = "../bevy/", features = ["std", "bevy_log", "keyboard", "mouse"] }
 color-print = { version = "0.3" }
 
 [workspace]
