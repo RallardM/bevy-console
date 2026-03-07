@@ -5,7 +5,7 @@ use bevy::prelude::*;
 pub use bevy_console_derive::ConsoleCommand;
 use bevy_egui::{EguiPlugin, EguiPreUpdateSet, EguiPrimaryContextPass};
 pub use bevy_egui::egui::Color32;
-use console::{ConsoleCache, block_keyboard_input, block_mouse_input};
+use console::{block_keyboard_input, block_mouse_input};
 use trie_rs::TrieBuilder;
 
 #[cfg(feature = "default-commands")]
@@ -17,11 +17,11 @@ use crate::commands::{
 
 pub use crate::console::{
     AddConsoleCommand, Command, ConsoleCommand, ConsoleCommandEntered, ConsoleConfiguration,
-    ConsoleOpen, ConsoleSizeValue, NamedCommand, PrintConsoleLine,
+    ConsoleOpen, ConsoleSizeValue, NamedCommand, PrintConsoleLine, ConsoleState, ConsoleCache,
 };
 pub use crate::log::*;
 
-use crate::console::{ConsoleState, console_ui, receive_console_line};
+use crate::console::{console_ui, receive_console_line};
 pub use clap;
 
 mod color;
