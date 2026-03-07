@@ -4,6 +4,7 @@
 use bevy::prelude::*;
 pub use bevy_console_derive::ConsoleCommand;
 use bevy_egui::{EguiPlugin, EguiPreUpdateSet, EguiPrimaryContextPass};
+pub use bevy_egui::egui::Color32;
 use console::{ConsoleCache, block_keyboard_input, block_mouse_input};
 use trie_rs::TrieBuilder;
 

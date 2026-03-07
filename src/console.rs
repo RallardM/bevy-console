@@ -312,10 +312,14 @@ pub struct ConsoleConfiguration {
     pub moveable: bool,
     /// show the title bar or not
     pub show_title_bar: bool,
-    /// Background color of console window
+    /// Background color of console window frame
     pub background_color: Color32,
+    /// Background color of the scrollback/log area
+    pub input_text_box_background_color: Color32,
+    /// Background color of the input field area
+    pub input_background_color: Color32,
     /// Foreground (text) color
-    pub foreground_color: Color32,
+    pub text_color: Color32,
     /// Number of suggested commands to show
     pub num_suggestions: usize,
     /// Blocks mouse from clicking through console
@@ -361,7 +365,9 @@ impl Default for ConsoleConfiguration {
             moveable: true,
             show_title_bar: true,
             background_color: Color32::from_black_alpha(102),
-            foreground_color: Color32::LIGHT_GRAY,
+            input_text_box_background_color: Color32::from_black_alpha(230),
+            input_background_color: Color32::from_black_alpha(180),
+            text_color: Color32::LIGHT_GRAY,
             num_suggestions: 4,
             block_mouse: false,
             block_keyboard: false,
@@ -389,7 +395,9 @@ impl Clone for ConsoleConfiguration {
             moveable: true,
             show_title_bar: true,
             background_color: Color32::from_black_alpha(102),
-            foreground_color: Color32::LIGHT_GRAY,
+            input_text_box_background_color: Color32::from_black_alpha(230),
+            input_background_color: Color32::from_black_alpha(180),
+            text_color: Color32::LIGHT_GRAY,
             num_suggestions: 4,
             block_mouse: self.block_mouse,
             block_keyboard: self.block_keyboard,
@@ -480,7 +488,7 @@ impl Default for ConsoleState {
 }
 
 fn default_style(config: &ConsoleConfiguration) -> TextFormat {
-    TextFormat::simple(FontId::monospace(config.input_font_size), config.foreground_color)
+    TextFormat::simple(FontId::monospace(config.input_font_size), config.text_color)
 }
 
 fn style_ansi_text(str: &str, config: &ConsoleConfiguration) -> LayoutJob {
@@ -497,10 +505,10 @@ fn style_ansi_text(str: &str, config: &ConsoleConfiguration) -> LayoutJob {
                 }
                 TextFormattingOverride::Italic => current_style.italics = true,
                 TextFormattingOverride::Underline => {
-                    current_style.underline = egui::Stroke::new(1., config.foreground_color)
+                    current_style.underline = egui::Stroke::new(1., config.text_color)
                 }
                 TextFormattingOverride::Strikethrough => {
-                    current_style.strikethrough = egui::Stroke::new(1., config.foreground_color)
+                    current_style.strikethrough = egui::Stroke::new(1., config.text_color)
                 }
                 TextFormattingOverride::Foreground(c) => current_style.color = c,
                 TextFormattingOverride::Background(c) => current_style.background = c,
@@ -620,14 +628,15 @@ pub(crate) fn console_ui(
             ..Default::default()
         })
         .show(ctx, |ui| {
-            ui.style_mut().visuals.extreme_bg_color = config.background_color;
-            ui.style_mut().visuals.override_text_color = Some(config.foreground_color);
+            ui.style_mut().visuals.extreme_bg_color = config.input_background_color;
+            ui.style_mut().visuals.override_text_color = Some(config.text_color);
 
             // ------------------------
             // Bottom panel: input area
             // ------------------------
             egui::TopBottomPanel::bottom("console_input_panel")
                 .frame(egui::Frame {
+                    fill: Color32::TRANSPARENT,
                     inner_margin: egui::Margin {
                         left: 10,
                         right: 10,
@@ -755,7 +764,12 @@ pub(crate) fn console_ui(
             // ------------------------
             // Central panel: scrollback
             // ------------------------
-            egui::CentralPanel::default().show_inside(ui, |ui| {
+            egui::CentralPanel::default()
+                .frame(egui::Frame {
+                    fill: config.input_text_box_background_color,
+                    ..Default::default()
+                })
+                .show_inside(ui, |ui| {
                 egui::ScrollArea::vertical()
                     .auto_shrink([false, false])
                     .stick_to_bottom(true)
