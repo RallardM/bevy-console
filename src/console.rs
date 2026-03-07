@@ -322,6 +322,10 @@ pub struct ConsoleConfiguration {
     pub text_color: Color32,
     /// Number of suggested commands to show
     pub num_suggestions: usize,
+    /// Background color of the suggestions popup/menu
+    pub suggestions_background_color: Color32,
+    /// Background color of the currently selected suggestion row
+    pub suggestions_selected_background_color: Color32,
     /// Blocks mouse from clicking through console
     pub block_mouse: bool,
     /// Blocks keyboard from interacting outside console when active
@@ -369,6 +373,8 @@ impl Default for ConsoleConfiguration {
             input_background_color: Color32::from_black_alpha(180),
             text_color: Color32::LIGHT_GRAY,
             num_suggestions: 4,
+            suggestions_background_color: Color32::from_black_alpha(220),
+            suggestions_selected_background_color: Color32::from_black_alpha(128),
             block_mouse: false,
             block_keyboard: false,
             arg_completions: Default::default(),
@@ -399,6 +405,8 @@ impl Clone for ConsoleConfiguration {
             input_background_color: Color32::from_black_alpha(180),
             text_color: Color32::LIGHT_GRAY,
             num_suggestions: 4,
+            suggestions_background_color: self.suggestions_background_color,
+            suggestions_selected_background_color: self.suggestions_selected_background_color,
             block_mouse: self.block_mouse,
             block_keyboard: self.block_keyboard,
             arg_completions: self.arg_completions.clone(),
@@ -737,30 +745,50 @@ pub(crate) fn console_ui(
                     {
                         let suggestions_area = egui::Area::new(ui.auto_id_with("suggestions"))
                             .order(egui::Order::Foreground)
-                            .fixed_pos(text_edit_response.rect.left_bottom())
+                            .fixed_pos(text_edit_response.rect.left_bottom() + egui::vec2(0.0, 8.0))
                             .movable(false);
 
                         suggestions_area.show(ui.ctx(), |ui| {
-                            ui.set_min_width(resolved_width);
+                            egui::Frame::popup(ui.style())
+                                .fill(config.suggestions_background_color)
+                                .show(ui, |ui| {
+                                    ui.spacing_mut().item_spacing.y = 2.0;
+                                    ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
+                                    
+                                    for (i, suggestion) in cache.predictions_cache.iter().enumerate() {
+                                        let is_highlighted = Some(i) == state.suggestion_index;
 
-                            for (i, suggestion) in cache.predictions_cache.iter().enumerate() {
-                                let is_highlighted = Some(i) == state.suggestion_index;
+                                        ui.horizontal(|ui| {
+                                            if is_highlighted {
+                                                let bg_rect = ui.available_rect_before_wrap();
+                                                ui.painter().rect_filled(
+                                                    bg_rect,
+                                                    0.0,
+                                                    config.suggestions_selected_background_color,
+                                                );
+                                            }
 
-                                let mut layout_job = egui::text::LayoutJob::default();
-                                let mut style = egui::TextFormat {
-                                    font_id: egui::FontId::new(config.input_font_size, egui::FontFamily::Monospace),
-                                    color: egui::Color32::WHITE,
-                                    ..Default::default()
-                                };
+                                            let label = egui::Label::new(
+                                                egui::RichText::new(suggestion)
+                                                    .monospace()
+                                                    .size(config.input_font_size)
+                                                    .color(egui::Color32::WHITE)
+                                            );
 
-                                if is_highlighted {
-                                    style.underline = egui::Stroke::new(1.0, egui::Color32::WHITE);
-                                    style.background = egui::Color32::from_black_alpha(128);
-                                }
+                                            let response = ui.add(label);
 
-                                layout_job.append(suggestion, 0.0, style);
-                                ui.label(layout_job);
-                            }
+                                            if is_highlighted {
+                                                ui.painter().line_segment(
+                                                    [
+                                                        response.rect.left_bottom(),
+                                                        response.rect.right_bottom(),
+                                                    ],
+                                                    egui::Stroke::new(1.0, egui::Color32::WHITE),
+                                                );
+                                            }
+                                        });
+                                    }
+                                });
                         });
                     }
                 });
