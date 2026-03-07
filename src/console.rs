@@ -1,4 +1,4 @@
-use bevy::ecs::query::FilteredAccessSet;
+﻿use bevy::ecs::query::FilteredAccessSet;
 use bevy::ecs::resource::Resource;
 use bevy::ecs::{
     change_detection::Tick,
@@ -641,15 +641,15 @@ pub(crate) fn console_ui(
                 .frame(egui::Frame {
                     fill: Color32::TRANSPARENT,
                     inner_margin: egui::Margin {
-                        left: 10,
-                        right: 10,
+                        left: 4,
+                        right: 4,
                         top: 5,
-                        bottom: 10,
+                        bottom: 5,
                     },
                     ..Default::default()
                 })
                 .show_inside(ui, |ui| {
-                    ui.separator();
+                    // ui.separator();
 
                     // Ctrl+C clears input
                     if ui.input(|i| i.modifiers.ctrl && i.key_pressed(egui::Key::C)) {
@@ -675,7 +675,7 @@ pub(crate) fn console_ui(
                         .lock_focus(true)
                         .font(egui::TextStyle::Monospace)
                         .frame(true)
-                        .margin(egui::vec2(12.0, 12.0));
+                        .margin(egui::vec2(6.0, 6.0));
 
                     let text_edit_response = ui.add(text_edit);
 
