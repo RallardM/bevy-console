@@ -641,6 +641,8 @@ pub(crate) fn console_ui(
     // Recompute predictions if the buffer changed
     recompute_predictions(&mut state, &mut cache, config.num_suggestions);
 
+    let opened_this_frame = open_status_changed || (console_open.is_changed() && console_open.open);
+
     let viewport = ctx.content_rect();
     let resolved_width = config.width.resolve(viewport.width());
     let resolved_height = config.height.resolve(viewport.height());
@@ -722,7 +724,7 @@ pub(crate) fn console_ui(
                     // App-level console input context owns Up/Down behavior.
 
                     // Focus input when console just opened
-                    if open_status_changed {
+                    if opened_this_frame {
                         ui.memory_mut(|m| m.request_focus(text_edit_response.id));
                     }
 
@@ -834,6 +836,7 @@ fn handle_enter(
             state.buf = cache.predictions_cache[index].clone();
             state.suggestion_index = None;
             set_cursor_pos(ui.ctx(), text_edit_response.id, state.buf.len());
+            ui.memory_mut(|m| m.request_focus(text_edit_response.id));
             return;
         }
 
@@ -871,6 +874,8 @@ fn handle_enter(
 
             state.buf.clear();
         }
+
+        ui.memory_mut(|m| m.request_focus(text_edit_response.id));
     }
 }
 
