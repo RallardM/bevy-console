@@ -615,8 +615,11 @@ pub(crate) fn console_ui(
     let viewport = ctx.content_rect();
     let resolved_width = config.width.resolve(viewport.width());
     let resolved_height = config.height.resolve(viewport.height());
+    let console_window_id = Id::new("bevy_console_window");
 
     egui::Window::new(&config.title_name)
+        .id(console_window_id)
+        .order(egui::Order::Foreground)
         .collapsible(config.collapsible)
         .default_pos([config.left_pos, config.top_pos])
         .fixed_size([resolved_width, resolved_height])
@@ -733,6 +736,7 @@ pub(crate) fn console_ui(
                         && !cache.prediction_matches_buffer
                     {
                         let suggestions_area = egui::Area::new(ui.auto_id_with("suggestions"))
+                            .order(egui::Order::Foreground)
                             .fixed_pos(text_edit_response.rect.left_bottom())
                             .movable(false);
 
@@ -785,6 +789,8 @@ pub(crate) fn console_ui(
                     });
             });
         });
+
+    ctx.move_to_top(egui::LayerId::new(egui::Order::Foreground, console_window_id));
 }
 
 fn handle_enter(
