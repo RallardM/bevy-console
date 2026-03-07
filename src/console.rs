@@ -794,14 +794,20 @@ pub(crate) fn console_ui(
                     .auto_shrink([false, false])
                     .stick_to_bottom(true)
                     .show(ui, |ui| {
-                        for line in &state.scrollback {
-                            ui.label(style_ansi_text(line, &config));
+                        egui::Frame {
+                            inner_margin: egui::Margin::same(8),
+                            ..Default::default()
                         }
+                        .show(ui, |ui| {
+                            for line in &state.scrollback {
+                                ui.label(style_ansi_text(line, &config));
+                            }
 
-                        // Scroll to bottom if console just opened
-                        if console_open.is_changed() {
-                            ui.scroll_to_cursor(Some(egui::Align::BOTTOM));
-                        }
+                            // Scroll to bottom if console just opened
+                            if console_open.is_changed() {
+                                ui.scroll_to_cursor(Some(egui::Align::BOTTOM));
+                            }
+                        });
                     });
             });
         });
