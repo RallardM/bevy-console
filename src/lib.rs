@@ -3,8 +3,8 @@
 
 use bevy::prelude::*;
 pub use bevy_console_derive::ConsoleCommand;
-use bevy_egui::{EguiPlugin, EguiPreUpdateSet, EguiPrimaryContextPass};
 pub use bevy_egui::egui::Color32;
+use bevy_egui::{EguiPlugin, EguiPreUpdateSet, EguiPrimaryContextPass};
 use console::{block_keyboard_input, block_mouse_input};
 use trie_rs::TrieBuilder;
 
@@ -16,8 +16,9 @@ use crate::commands::{
 };
 
 pub use crate::console::{
-    AddConsoleCommand, Command, ConsoleCommand, ConsoleCommandEntered, ConsoleConfiguration,
-    ConsoleOpen, ConsoleSizeValue, NamedCommand, PrintConsoleLine, ConsoleState, ConsoleCache,
+    AddConsoleCommand, Command, ConsoleCache, ConsoleCommand, ConsoleCommandEntered,
+    ConsoleConfiguration, ConsoleOpen, ConsoleSizeValue, ConsoleState, NamedCommand,
+    PrintConsoleLine,
 };
 pub use crate::log::*;
 

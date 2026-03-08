@@ -1,4 +1,4 @@
-﻿use bevy::ecs::query::FilteredAccessSet;
+use bevy::ecs::query::FilteredAccessSet;
 use bevy::ecs::resource::Resource;
 use bevy::ecs::{
     change_detection::Tick,
@@ -488,7 +488,7 @@ pub struct ConsoleOpen {
 }
 
 /// The mutable console state containing buffer, history, and suggestion index.
-/// 
+///
 /// This is exposed publicly to allow app-level systems to drive console input behavior.
 #[derive(Resource)]
 pub struct ConsoleState {
@@ -744,8 +744,10 @@ pub(crate) fn console_ui(
                                 .show(ui, |ui| {
                                     ui.spacing_mut().item_spacing.y = 2.0;
                                     ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
-                                    
-                                    for (i, suggestion) in cache.predictions_cache.iter().enumerate() {
+
+                                    for (i, suggestion) in
+                                        cache.predictions_cache.iter().enumerate()
+                                    {
                                         let is_highlighted = Some(i) == state.suggestion_index;
 
                                         ui.horizontal(|ui| {
@@ -762,7 +764,7 @@ pub(crate) fn console_ui(
                                                 egui::RichText::new(suggestion)
                                                     .monospace()
                                                     .size(config.input_font_size)
-                                                    .color(egui::Color32::WHITE)
+                                                    .color(egui::Color32::WHITE),
                                             );
 
                                             let response = ui.add(label);
@@ -792,29 +794,32 @@ pub(crate) fn console_ui(
                     ..Default::default()
                 })
                 .show_inside(ui, |ui| {
-                egui::ScrollArea::vertical()
-                    .auto_shrink([false, false])
-                    .stick_to_bottom(true)
-                    .show(ui, |ui| {
-                        egui::Frame {
-                            inner_margin: egui::Margin::same(8),
-                            ..Default::default()
-                        }
+                    egui::ScrollArea::vertical()
+                        .auto_shrink([false, false])
+                        .stick_to_bottom(true)
                         .show(ui, |ui| {
-                            for line in &state.scrollback {
-                                ui.label(style_ansi_text(line, &config));
+                            egui::Frame {
+                                inner_margin: egui::Margin::same(8),
+                                ..Default::default()
                             }
+                            .show(ui, |ui| {
+                                for line in &state.scrollback {
+                                    ui.label(style_ansi_text(line, &config));
+                                }
 
-                            // Scroll to bottom if console just opened
-                            if console_open.is_changed() {
-                                ui.scroll_to_cursor(Some(egui::Align::BOTTOM));
-                            }
+                                // Scroll to bottom if console just opened
+                                if console_open.is_changed() {
+                                    ui.scroll_to_cursor(Some(egui::Align::BOTTOM));
+                                }
+                            });
                         });
-                    });
-            });
+                });
         });
 
-    ctx.move_to_top(egui::LayerId::new(egui::Order::Foreground, console_window_id));
+    ctx.move_to_top(egui::LayerId::new(
+        egui::Order::Foreground,
+        console_window_id,
+    ));
 }
 
 fn handle_enter(
