@@ -4,16 +4,24 @@ use std::{
 };
 
 use bevy::{
-    app::{App, Update},
-    log::tracing_subscriber::{self, EnvFilter, Layer, Registry},
-    prelude::{IntoScheduleConfigs, MessageWriter, ResMut, Resource},
+    app::App,
+    log::tracing_subscriber::{self, EnvFilter, Layer},
+    prelude::{MessageWriter, ResMut, Resource},
 };
 
-use crate::{ConsoleSet, PrintConsoleLine};
+use tracing_subscriber::registry::Registry;
+use crate::{PrintConsoleLine};
 
 /// Buffers logs written by bevy at runtime
 #[derive(Resource)]
 pub struct BevyLogBuffer(Arc<Mutex<std::io::Cursor<Vec<u8>>>>);
+
+impl BevyLogBuffer {
+    /// Returns a reference to the internal log buffer.
+    pub fn buffer(&self) -> &Arc<Mutex<std::io::Cursor<Vec<u8>>>> {
+        &self.0
+    }
+}
 
 /// Writer implementation which writes into a buffer resource inside the bevy world
 pub struct BevyLogBufferWriter(Arc<Mutex<std::io::Cursor<Vec<u8>>>>);
@@ -39,14 +47,26 @@ impl Write for BevyLogBufferWriter {
 }
 
 /// Flushes the log buffer and sends its content to the console
+// Unused import removed
+/// Flushes the log buffer and sends its content to the console
 pub fn send_log_buffer_to_console(
     buffer: ResMut<BevyLogBuffer>,
     mut console_lines: MessageWriter<PrintConsoleLine>,
+    // mut command_writer: EventWriter<ConsoleCommandEntered>,
 ) {
     let mut buffer = buffer.0.lock().unwrap();
     // read and clean buffer
     let buffer = buffer.get_mut();
     for line in buffer.lines().map_while(Result::ok) {
+        // Dispatch console command if log line starts with '> '
+        if let Some(cmd) = line.strip_prefix("> ") {
+            // Split command and args
+            let mut parts = cmd.split_whitespace();
+            if let Some(_) = parts.next() {
+                let _: Vec<String> = parts.map(|s| s.to_string()).collect();
+                // Command dispatch removed; handle in plugin system.
+            }
+        }
         console_lines.write(PrintConsoleLine { line });
     }
     buffer.clear();
@@ -90,10 +110,7 @@ fn setup_layer(
 ) -> Option<Box<dyn tracing_subscriber::Layer<Registry> + Send + Sync>> {
     let buffer = Arc::new(Mutex::new(std::io::Cursor::new(Vec::new())));
     app.insert_resource(BevyLogBuffer(buffer.clone()));
-    app.add_systems(
-        Update,
-        send_log_buffer_to_console.in_set(ConsoleSet::PostCommands),
-    );
+    // Removed system registration for send_log_buffer_to_console. Call directly from plugin system.
 
     let layer: Box<dyn tracing_subscriber::Layer<Registry> + Send + Sync> = match filter {
         Some(filter) => Box::new(

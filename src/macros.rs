@@ -10,7 +10,8 @@ macro_rules! reply {
     ($cmd: ident, $fmt: literal$(, $($arg:expr),* $(,)?)?) => {
         {
             let msg = format!($fmt$(, $($arg),*)?);
-            $cmd.reply(msg);
+            $cmd.reply(msg.clone());
+            info!("[console] {}", msg);
         }
     };
 }
@@ -44,7 +45,8 @@ macro_rules! reply_failed {
     ($cmd: ident, $fmt: literal$(, $($arg:expr),* $(,)?)?) => {
         {
             let msg = format!($fmt$(, $($arg),*)?);
-            $cmd.reply_failed(msg);
+            $cmd.reply_failed(msg.clone());
+            info!("[console] {}", msg);
         }
     };
 }
