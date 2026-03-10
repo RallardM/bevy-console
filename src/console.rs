@@ -822,6 +822,22 @@ pub(crate) fn console_ui(
     ));
 }
 
+/// Try to match a multi-word command. For tokens like ["perfui", "simple", "on"],
+/// tries "perfui simple on" first, then "perfui simple" with args ["on"], etc.
+fn try_match_multiword_command(
+    commands: &std::collections::BTreeMap<&'static str, clap::Command>,
+    tokens: &[String],
+) -> Option<(String, Vec<String>)> {
+    for split_at in (1..=tokens.len()).rev() {
+        let command_name = tokens[..split_at].join(" ");
+        if commands.contains_key(command_name.as_str()) {
+            let args: Vec<String> = tokens[split_at..].to_vec();
+            return Some((command_name, args));
+        }
+    }
+    None
+}
+
 fn handle_enter(
     config: &Res<'_, ConsoleConfiguration>,
     cache: &ResMut<'_, ConsoleCache>,
@@ -857,15 +873,13 @@ fn handle_enter(
             }
             state.history_index = 0;
 
-            let mut args = Shlex::new(&state.buf).collect::<Vec<_>>();
+            let args = Shlex::new(&state.buf).collect::<Vec<_>>();
 
             if !args.is_empty() {
-                let command_name = args.remove(0);
-                debug!("Command entered: `{command_name}`, with args: `{args:?}`");
-
-                let command = config.commands.get(command_name.as_str());
-
-                if command.is_some() {
+                if let Some((command_name, args)) =
+                    try_match_multiword_command(&config.commands, &args)
+                {
+                    debug!("Command entered: `{command_name}`, with args: `{args:?}`");
                     command_entered.write(ConsoleCommandEntered { command_name, args });
                 } else {
                     debug!(
