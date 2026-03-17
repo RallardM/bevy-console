@@ -31,8 +31,8 @@ trie-rs = "0.4"
 bevy = { path = "../bevy/", features = ["std", "bevy_log", "keyboard", "mouse"] }
 color-print = { version = "0.3" }
 
-[workspace]
-members = ["bevy_console_derive"]
+# [workspace]
+# members = ["bevy_console_derive"]
 
 [features]
 default = ["default-commands"]
