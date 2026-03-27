@@ -10,7 +10,8 @@ license = "MIT"
 readme = "README.md"
 
 [dependencies]
-bevy = { path = "../bevy/", default-features = false, features = [
+# bevy = { path = "../bevy/", default-features = false, features = [
+bevy = { version = "0.18.0", default-features = false, features = [
   "std",
   "bevy_log",
   "keyboard",
@@ -18,7 +19,9 @@ bevy = { path = "../bevy/", default-features = false, features = [
 ] }
 clap = { version = "4.5", features = ["derive"] }
 bevy_console_derive = { path = "./bevy_console_derive", version = "0.5.0" }
-bevy_egui = { version = "0.39", default-features = false, features = [
+
+# bevy_egui = { path = "../bevy_egui", default-features = false, features = [
+bevy_egui = { version = "0.39.1", default-features = false, features = [
   "render",
   "default_fonts",
 ] }
@@ -28,7 +31,8 @@ strip-ansi-escapes = "0.2"
 trie-rs = "0.4"
 
 [dev-dependencies]
-bevy = { path = "../bevy/", features = ["std", "bevy_log", "keyboard", "mouse"] }
+# bevy = { path = "../bevy/", features = ["std", "bevy_log", "keyboard", "mouse"] }
+bevy = { version = "0.18.0", features = ["std", "bevy_log", "keyboard", "mouse"] }
 color-print = { version = "0.3" }
 
 # [workspace]
