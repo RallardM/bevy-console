@@ -9,8 +9,8 @@ use bevy::{
     prelude::{MessageWriter, ResMut, Resource},
 };
 
+use crate::PrintConsoleLine;
 use tracing_subscriber::registry::Registry;
-use crate::{PrintConsoleLine};
 
 /// Buffers logs written by bevy at runtime
 #[derive(Resource)]
