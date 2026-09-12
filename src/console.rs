@@ -2,7 +2,7 @@ use bevy::ecs::query::FilteredAccessSet;
 use bevy::ecs::resource::Resource;
 use bevy::ecs::{
     change_detection::Tick,
-    system::{ScheduleSystem, SystemMeta, SystemParam},
+    system::{ScheduleSystem, SystemMeta, SystemParam, SystemParamValidationError},
     world::unsafe_world_cell::UnsafeWorldCell,
 };
 use bevy::platform::hash::FixedState;
@@ -34,8 +34,14 @@ type ConsoleCommandEnteredReaderSystemParam =
 type PrintConsoleLineWriterSystemParam = MessageWriter<'static, PrintConsoleLine>;
 
 /// A super-trait for command like structures
-pub trait Command: NamedCommand + CommandFactory + FromArgMatches + Sized + Resource {}
-impl<T: NamedCommand + CommandFactory + FromArgMatches + Sized + Resource> Command for T {}
+pub trait Command:
+    NamedCommand + CommandFactory + FromArgMatches + Sized + Send + Sync + 'static
+{
+}
+impl<T: NamedCommand + CommandFactory + FromArgMatches + Sized + Send + Sync + 'static> Command
+    for T
+{
+}
 
 /// Trait used to allow uniquely identifying commands at compile time
 pub trait NamedCommand {
@@ -155,20 +161,20 @@ unsafe impl<T: Command> SystemParam for ConsoleCommand<'_, T> {
         system_meta: &SystemMeta,
         world: UnsafeWorldCell<'w>,
         change_tick: Tick,
-    ) -> Self::Item<'w, 's> {
+    ) -> Result<Self::Item<'w, 's>, SystemParamValidationError> {
         unsafe {
             let mut message_reader = ConsoleCommandEnteredReaderSystemParam::get_param(
                 &mut state.message_reader,
                 system_meta,
                 world,
                 change_tick,
-            );
+            )?;
             let mut console_line = PrintConsoleLineWriterSystemParam::get_param(
                 &mut state.console_line,
                 system_meta,
                 world,
                 change_tick,
-            );
+            )?;
 
             let command = message_reader.read().find_map(|command| {
                 if T::name() == command.command_name {
@@ -194,10 +200,10 @@ unsafe impl<T: Command> SystemParam for ConsoleCommand<'_, T> {
                 None
             });
 
-            ConsoleCommand {
+            Ok(ConsoleCommand {
                 command,
                 console_line,
-            }
+            })
         }
     }
 }
@@ -629,7 +635,7 @@ pub(crate) fn console_ui(
     let mut open_status_changed = false;
 
     // Toggle console
-    if pressed && (console_open.open || !ctx.wants_keyboard_input()) {
+    if pressed && (console_open.open || !ctx.egui_wants_keyboard_input()) {
         console_open.open = !console_open.open;
         open_status_changed = true;
     }
@@ -681,6 +687,10 @@ pub(crate) fn console_ui(
                 })
                 .show_inside(ui, |ui| {
                     // ui.separator();
+            egui::Panel::bottom("console_input_panel")
+                .exact_size(36.0)
+                .show(ui, |ui| {
+                    ui.separator();
 
                     // Ctrl+C clears input
                     if ui.input(|i| i.modifiers.ctrl && i.key_pressed(egui::Key::C)) {
@@ -720,6 +730,41 @@ pub(crate) fn console_ui(
                         &text_edit_response,
                     );
 
+                    // History navigation
+                    //if text_edit_response.has_focus()
+                    //    && ui.input(|i| i.key_pressed(egui::Key::ArrowUp))
+                    //    && state.history.len() > 1
+                    //    && state.history_index < state.history.len() - 1
+                    //{
+                    //    if state.history_index == 0 && !state.buf.trim().is_empty() {
+                    //        *state.history.get_mut(0).unwrap() = state.buf.clone();
+                    //    }
+                    //
+                    //    state.history_index += 1;
+                    //    state.buf = state.history[state.history_index].clone();
+                    //    set_cursor_pos(ui.ctx(), text_edit_response.id, state.buf.len());
+                    //} else if text_edit_response.has_focus()
+                    //    && ui.input(|i| i.key_pressed(egui::Key::ArrowDown))
+                    //    && state.history_index > 0
+                    //{
+                    //    state.history_index -= 1;
+                    //    state.buf = state.history[state.history_index].clone();
+                    //    set_cursor_pos(ui.ctx(), text_edit_response.id, state.buf.len());
+                    //}
+
+                    //// Tab cycles suggestions
+                    //if ui.input(|i| i.key_pressed(egui::Key::Tab))
+                    //    && !cache.predictions_cache.is_empty()
+                    //{
+                    //    match &mut state.suggestion_index {
+                    //        Some(index) => {
+                    //            *index = (*index + 1) % cache.predictions_cache.len();
+                    //        }
+                    //        None => {
+                    //            state.suggestion_index = Some(0);
+                    //        }
+                    //    }
+                    //}
                     // Built-in history/suggestion navigation disabled.
                     // App-level console input context owns Up/Down behavior.
 
@@ -806,6 +851,14 @@ pub(crate) fn console_ui(
                                 for line in &state.scrollback {
                                     ui.label(style_ansi_text(line, &config));
                                 }
+            egui::CentralPanel::default().show(ui, |ui| {
+                egui::ScrollArea::vertical()
+                    .auto_shrink([false, false])
+                    .stick_to_bottom(true)
+                    .show(ui, |ui| {
+                        for line in &state.scrollback {
+                            ui.label(style_ansi_text(line, &config));
+                        }
 
                                 // Scroll to bottom if console just opened
                                 if console_open.is_changed() {
@@ -944,7 +997,7 @@ pub fn block_mouse_input(
         return;
     };
 
-    if context.is_pointer_over_area() || context.wants_pointer_input() {
+    if context.is_pointer_over_egui() || context.egui_wants_pointer_input() {
         mouse.reset_all();
     }
 }
@@ -962,7 +1015,7 @@ pub fn block_keyboard_input(
         return;
     };
 
-    if context.wants_keyboard_input() {
+    if context.egui_wants_keyboard_input() {
         keyboard_keycode.reset_all();
     }
 }
